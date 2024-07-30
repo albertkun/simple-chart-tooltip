@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple D3 Word Cloud</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-cloud/1.2.5/d3.layout.cloud.min.js"></script>
+</head>
+<body>
+    <textarea id="input-text" rows="4" cols="50" placeholder="Enter your text here..."></textarea>
+    <button onclick="processAndGenerateWordCloud()">Generate Word Cloud</button>
+    <div id="word-cloud" style="width: 600px; height: 400px; border: 1px solid black;"></div>
+
+    <script>
+		
+        function processText(text) {
+            // Split text into words and calculate frequency
+            const wordCounts = {};
+            text.split(/\s+/).forEach(word => {
+                wordCounts[word] = (wordCounts[word] || 0) + 1;
+            });
+
+            // Convert wordCounts to an array of objects
+            return Object.keys(wordCounts).map(word => ({
+                text: word,
+                size: wordCounts[word]
+            }));
+        }
+
+        function generateWordCloud(words) {
+            // Determine the maximum frequency
+            const maxFrequency = Math.max(...words.map(d => d.size));
+
+            // Clear previous word cloud
+            d3.select("#word-cloud").selectAll("*").remove();
+
+            // Generate word cloud
+            const layout = d3.layout.cloud()
+                .size([600, 400])
+                .words(words)
+                .padding(5)
+                .rotate(() => 0) // Rotate all words to 0 degrees (left to right)
+                .fontSize(d => (d.size / maxFrequency) * 50) // Scale font size based on frequency
+                .on("end", draw);
+
+            layout.start();
+
+            function draw(words) {
+                d3.select("#word-cloud")
+                    .append("svg")
+                    .attr("width", layout.size()[0])
+                    .attr("height", layout.size()[1])
+                    .append("g")
+                    .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
+                    .selectAll("text")
+                    .data(words)
+                    .enter().append("text")
+                    .style("font-size", d => d.size + "px")
+                    .style("font-family", "Impact")
+                    .style("fill", "black")
+                    .attr("text-anchor", "middle")
+                    .attr("transform", d => "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")")
+                    .text(d => d.text);
+            }
+        }
+
+        function processAndGenerateWordCloud() {
+            const text = document.getElementById('input-text').value;
+            const words = processText(text);
+            generateWordCloud(words);
+        }
+    </script>
+</body>
+</html>
